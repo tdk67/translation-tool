@@ -1,0 +1,13 @@
+{
+  "appName": "PolyVoice",
+  "version": "0.1.0",
+  "buildId": "PS2DOV",
+  "timestamp": "January 22, 2026 at 07:20 PM",
+  "description": "PolyVoice is a secure, local-first translation engine designed for professionals. It runs entirely on your hardware using Whisper for speech recognition and local LLMs for translation, ensuring your conversations never leave this device.",
+  "features": [
+    "Local Whisper STT (Privacy First)",
+    "Neural Translation (Ollama/Llama3)",
+    "System Audio Capture",
+    "Zero Cloud Dependencies"
+  ]
+}
