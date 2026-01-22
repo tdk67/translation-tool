@@ -1,60 +1,60 @@
-# PolyglotPop 🌍
+# PolyVoice 🌍
 
-**PolyglotPop** is a privacy-first, desktop-based voice translation widget. It sits quietly in the background and pops up via a global hotkey (`Alt+Space`) to instantly transcribe your voice and translate it into multiple languages using 100% local AI.
+**PolyVoice** (formerly PolyglotPop) is a privacy-first, desktop-based translation engine designed for professionals. It runs entirely on your local hardware using high-performance AI models to provide instant speech-to-text and translation without sending a single byte of data to the cloud.
 
-## 🚀 Features
+## 🚀 Key Features
 
-* **Global Hotkey:** Press `Alt+Space` anywhere to summon the widget.
-* **Privacy First:** No cloud APIs. Everything runs on your machine.
-    * **STT:** Uses `Whisper` (via Transformers.js) running locally in Electron.
-    * **Translation:** Uses `Ollama` (Llama 3 or similar) running locally.
-* **Instant Audio Processing:** Decodes microphone input into 16kHz PCM audio for high-accuracy transcription.
-* **Modern UI:** Dark mode, glassmorphism design, and animated "breathing" microphone states.
-* **Text-to-Speech:** Reads the translation aloud automatically.
+* **100% Local Privacy:**
+    * **STT:** Uses `Xenova/whisper-small` (approx. 500MB) running locally in Electron for high-accuracy transcription (even for songs/lyrics).
+    * **Translation:** Connects to a local **Ollama** instance (Llama 3 recommended).
+* **Dual Audio Modes:**
+    * 🎤 **Microphone:** Translate your own voice in real-time.
+    * 🖥️ **System Audio:** Capture and translate audio from other apps (Teams meetings, YouTube videos, Movies).
+* **European Focus:** Optimized for English, German, French, Spanish, Italian, Hungarian, Polish, and Czech.
+* **Global Hotkey:** Press `Alt+Shift+Space` to toggle the overlay instantly.
+* **Modern UI:** Glassmorphism design, German localization, and auto-hiding interface.
 
 ## 🛠️ Prerequisites
 
-Before you begin, ensure you have the following installed:
-
 1.  **Node.js (v20+):** [Download Here](https://nodejs.org/)
-2.  **Git:** [Download Here](https://git-scm.com/)
-3.  **Ollama:** [Download Here](https://ollama.com/)
-    * *Requirement:* You must have the translation model pulled. Run `ollama pull llama3` in your terminal.
+2.  **Ollama:** [Download Here](https://ollama.com/)
+    * *Required:* You must pull a model. Open your terminal and run:
+        ```bash
+        ollama pull llama3
+        ```
+    * *Note:* Ensure Ollama is running (`ollama serve`) before starting the app.
 
 ## 📦 Installation
 
 ```bash
 # 1. Clone the repository
 git clone <your-repo-url>
-cd polyglot-pop
+cd translation-tool_v04
 
 # 2. Install dependencies
 npm install
-
-# 3. Create the public assets (if missing)
-# Ensure you have a file named 'icon.ico' in the /public folder.
 ```
 
 ## 🏃‍♂️ How to Run
 
-Because this uses Next.js Static Exports with Electron, you generally cannot use `npm start`. Instead, use the build-and-run workflow:
+Since this is a hybrid Next.js + Electron app, use the build-and-run workflow:
 
 ```bash
-# 1. Build the Next.js UI (Export to static HTML)
+# 1. Build the UI & Scripts (Auto-increments patch version)
+node scripts/update-build.js
+
+# 2. Compile Next.js
 npm run build
 
-# 2. Launch the Electron App
+# 3. Launch Electron
 npm run electron
 ```
 
-*Note: If the window doesn't appear immediately, press `Alt+Space`.*
-
 ## ⚠️ Troubleshooting
 
-* **"Fork Bomb" / Git Errors:** This is usually caused by Antivirus (like Avira). Disable "Real-Time Protection" temporarily and reinstall Git/Node.
-* **Window is White/Blank:** Ensure `next.config.mjs` has `assetPrefix: './'`.
-* **Microphone Error:** Check your system privacy settings to allow Electron to access the microphone.
-* **Translation Fails:** Ensure Ollama is running (`ollama serve`) and the model name in `electron/main.js` matches what you have installed (default: "llama3").
+* **System Audio is Silent:** When selecting a screen/tab to share, **you must check the "Share Audio" box** in the popup window.
+* **Ollama Not Found:** The app tries to connect to `127.0.0.1:11434`. Ensure no firewall is blocking this port.
+* **"No handler registered":** If you see this error, ensure you have run `npm run build` after any code changes. The Electron backend relies on the built static files.
 
-## 🛑 Antivirus Note
-If you use Avira or similar aggressive antivirus software, add the project folder (`C:\Data\work\...`) and the Node.js folder (`C:\Program Files\nodejs`) to your **Exceptions / Whitelist** to prevent `npm` from being quarantined.
+## 📜 License
+MIT

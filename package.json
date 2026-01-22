@@ -1,14 +1,42 @@
 {
-  "name": "polyglot-pop",
-  "version": "0.1.0",
-  "private": true,
+  "name": "poly-voice",
+  "version": "0.1.2",
   "main": "electron/main.js",
+  "description": "Privacy-first local translation tool.",
+  "author": "PitchArena",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "prebuild": "node scripts/update-build.js",
+    "build": "npm run prebuild && next build",
     "start": "next start",
     "lint": "next lint",
-    "electron": "electron ."
+    "electron": "electron .",
+    "dist": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.pitcharena.polyvoice",
+    "productName": "PolyVoice",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.0.0",
@@ -30,6 +58,7 @@
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.17",
     "electron": "^29.1.0",
+    "electron-builder": "^26.4.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"

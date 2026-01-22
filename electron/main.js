@@ -10,7 +10,9 @@ let modelLoading = false;
 let currentHotkey = 'Alt+Shift+Space';
 
 const BUILD_TIME = new Date().toISOString();
-const WHISPER_MODEL = 'Xenova/whisper-base'; 
+
+// UPGRADE: 'whisper-small' is much better for songs/fast speech than 'base'
+const WHISPER_MODEL = 'Xenova/whisper-small'; 
 
 function registerHotkey(hotkey) {
   globalShortcut.unregisterAll();
@@ -35,8 +37,7 @@ async function loadWhisperModel() {
     const { pipeline, env } = await import('@xenova/transformers');
     env.allowLocalModels = false;
     
-    // Check if model already exists to avoid re-download logs if not needed
-    console.log(`[INFO] Loading Whisper Model: ${WHISPER_MODEL}`);
+    console.log(`[INFO] Lade Whisper Modell: ${WHISPER_MODEL}`);
     transcriber = await pipeline('automatic-speech-recognition', WHISPER_MODEL, {
         progress_callback: (data) => {
             if (data.status === 'progress') {
@@ -45,10 +46,10 @@ async function loadWhisperModel() {
             }
         }
     }); 
-    console.log("\n[SUCCESS] Whisper Model Loaded!");
+    console.log("\n[ERFOLG] Whisper Modell geladen!");
     if (mainWindow) mainWindow.webContents.send('model-ready');
   } catch (err) {
-    console.error("\n[ERROR] Failed to load Whisper:", err);
+    console.error("\n[FEHLER] Konnte Whisper nicht laden:", err);
   } finally {
     modelLoading = false;
   }
@@ -77,9 +78,21 @@ function createTray() {
     : nativeImage.createEmpty();
 
   tray = new Tray(icon);
+  
+  // GERMAN MENU
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Open Polyglot', click: () => showWindow() },
-    { label: 'Quit', click: () => {
+    { label: 'Polyglot öffnen', click: () => showWindow() },
+    { type: 'separator' },
+    { label: 'Einstellungen', click: () => {
+        showWindow();
+        mainWindow.webContents.send('open-settings');
+    }},
+    { label: 'Über', click: () => {
+        showWindow();
+        mainWindow.webContents.send('open-about');
+    }},
+    { type: 'separator' },
+    { label: 'Beenden', click: () => {
         app.isQuitting = true;
         app.quit();
     }}
@@ -100,7 +113,7 @@ function createWindow() {
     transparent: true,
     resizable: false,
     show: false,
-    alwaysOnTop: true, 
+    alwaysOnTop: true,
     hasShadow: true,
     backgroundColor: '#00000000',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
@@ -129,31 +142,34 @@ function createWindow() {
 
 ipcMain.handle('is-model-ready', () => !!transcriber);
 
-// --- FIXED: FORCE IPv4 (127.0.0.1) ---
+ipcMain.handle('get-screen-sources', async () => {
+  const sources = await desktopCapturer.getSources({ 
+    types: ['window', 'screen'],
+    thumbnailSize: { width: 0, height: 0 }
+  });
+  return sources.map(s => ({ id: s.id, name: s.name }));
+});
+
 ipcMain.handle('get-ollama-models', async () => {
   try {
-    // 127.0.0.1 is much safer than localhost in Node environment
     const response = await fetch('http://127.0.0.1:11434/api/tags');
-    if (!response.ok) throw new Error(`Ollama returned ${response.status}`);
-    
+    if (!response.ok) throw new Error(`Ollama status: ${response.status}`);
     const data = await response.json();
     return { success: true, models: data.models.map(m => m.name) };
   } catch (e) {
-    console.error("[ERROR] Ollama connection failed:", e.message);
-    return { success: false, error: "Could not connect to Ollama (127.0.0.1:11434)" };
+    return { success: false, error: "Verbindung zu Ollama fehlgeschlagen" };
   }
 });
 
 ipcMain.handle('get-build-info', () => ({ buildTime: BUILD_TIME }));
 
 ipcMain.handle('whisper-transcribe', async (event, audioData) => {
-    if (!transcriber) return { success: false, error: "AI warming up..." };
+    if (!transcriber) return { success: false, error: "KI wird geladen..." };
     
     try {
         let inputValues = Array.isArray(audioData) ? audioData : Object.values(audioData);
         const audio = new Float32Array(inputValues);
         
-        // Silence check
         let maxAmp = 0;
         for(let i=0; i<audio.length; i++) if (Math.abs(audio[i]) > maxAmp) maxAmp = Math.abs(audio[i]);
         if (maxAmp < 0.01) return { success: true, text: "" };
@@ -174,27 +190,32 @@ ipcMain.handle('translate-batch', async (event, { text, targetLangs }) => {
     const settings = getSettings();
     const langString = targetLangs.join(", ");
     
-    const prompt = `Translate this German text: "${text}" into: ${langString}.
-    Return JSON only. Keys = language name, Values = translation.
-    Example: {"English": "Hello"}
-    No markdown.`;
+    // STRICTER PROMPT to avoid "Here is your JSON" chatter
+    const systemPrompt = `You are a strict translation API. 
+    Task: Translate German text to: ${langString}.
+    Format: Return ONLY a valid JSON object. No Markdown. No Intro.
+    Example: {"English": "Hello", "French": "Salut"}`;
+
+    const userPrompt = `"${text}"`;
 
     try {
-        // FORCE IPv4 HERE TOO
         const baseUrl = 'http://127.0.0.1:11434';
-        
         const response = await fetch(`${baseUrl}/api/generate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-            model: settings.ollamaModel, 
-            prompt: prompt, 
-            stream: false,
-            format: "json"
+                model: settings.ollamaModel, 
+                prompt: `${systemPrompt}\n\nInput: ${userPrompt}`, 
+                stream: false,
+                format: "json",
+                options: { temperature: 0.1 }
             })
         });
         const data = await response.json();
-        return { success: true, results: JSON.parse(data.response) };
+        
+        // Clean JSON before parsing just in case
+        let cleanJson = data.response.replace(/```json/g, '').replace(/```/g, '').trim();
+        return { success: true, results: JSON.parse(cleanJson) };
     } catch (e) {
         console.error("[ERROR] Translation failed:", e);
         return { success: false, error: e.message };

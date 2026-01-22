@@ -4,9 +4,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   whisper: {
     transcribe: (audioData) => ipcRenderer.invoke('whisper-transcribe', audioData),
   },
-  // --- THIS WAS MISSING OR DIFFERENT ---
   translateBatch: (data) => ipcRenderer.invoke('translate-batch', data),
   
+  // --- NEW: For System Audio ---
+  getScreenSources: () => ipcRenderer.invoke('get-screen-sources'),
+
   // Settings & System
   onStartListening: (callback) => ipcRenderer.on('start-listening', callback),
   onModelReady: (callback) => ipcRenderer.on('model-ready', callback),

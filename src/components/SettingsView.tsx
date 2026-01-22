@@ -18,23 +18,21 @@ interface SettingsViewProps {
 }
 
 const LANGUAGES = [
-  { id: 'en', name: 'English', flag: '🇺🇸' },
-  { id: 'es', name: 'Spanish', flag: '🇪🇸' },
-  { id: 'fr', name: 'French', flag: '🇫🇷' },
-  { id: 'de', name: 'German', flag: '🇩🇪' },
-  { id: 'it', name: 'Italian', flag: '🇮🇹' },
-  { id: 'hu', name: 'Hungarian', flag: '🇭🇺' },
-  { id: 'pl', name: 'Polish', flag: '🇵🇱' },
-  { id: 'cs', name: 'Czech', flag: '🇨🇿' },
+  { id: 'en', name: 'Englisch', flag: '🇺🇸' },
+  { id: 'es', name: 'Spanisch', flag: '🇪🇸' },
+  { id: 'fr', name: 'Französisch', flag: '🇫🇷' },
+  { id: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { id: 'it', name: 'Italienisch', flag: '🇮🇹' },
+  { id: 'hu', name: 'Ungarisch', flag: '🇭🇺' },
+  { id: 'pl', name: 'Polnisch', flag: '🇵🇱' },
+  { id: 'cs', name: 'Tschechisch', flag: '🇨🇿' },
 ];
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, onBack, availableModels }) => {
   const [localSettings, setLocalSettings] = useState<SettingsData>(settings);
-  // Local state to handle manual refreshing in this view
   const [currentModels, setCurrentModels] = useState<string[]>(availableModels);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Sync props to state if props update
   useEffect(() => {
     if(availableModels.length > 0) setCurrentModels(availableModels);
   }, [availableModels]);
@@ -47,7 +45,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
             setCurrentModels(res.models);
         }
     }
-    setTimeout(() => setIsRefreshing(false), 500); // Visual feedback
+    setTimeout(() => setIsRefreshing(false), 500); 
   };
 
   const toggleLanguage = (id: string) => {
@@ -67,12 +65,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
         <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">
           <ChevronLeft size={20} />
         </button>
-        <h1 className="text-xl font-semibold">Configuration</h1>
+        <h1 className="text-xl font-semibold">Konfiguration</h1>
       </div>
 
       <div className="space-y-8 no-drag pb-10">
         <section>
-          <label className="block text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">AI Provider</label>
+          <label className="block text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">KI-Anbieter</label>
           <div className="grid grid-cols-2 gap-3">
             {['ollama', 'openrouter'].map(provider => (
               <button
@@ -94,7 +92,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
           {localSettings.provider === 'openrouter' ? (
             <>
                <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">API Key</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">API-Schlüssel</label>
                 <input
                   type="password"
                   value={localSettings.openRouterKey}
@@ -104,7 +102,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">Model String</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5 ml-1">Modell-String</label>
                 <input
                   type="text"
                   value={localSettings.openRouterModel}
@@ -116,10 +114,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
           ) : (
             <div>
               <div className="flex justify-between items-center mb-1.5 ml-1">
-                 <label className="block text-xs font-bold text-gray-500">Ollama Model</label>
+                 <label className="block text-xs font-bold text-gray-500">Ollama Modell</label>
                  {currentModels.length === 0 && (
                    <span className="text-[10px] text-red-400 flex items-center gap-1">
-                     <AlertCircle size={10} /> Is Ollama running?
+                     <AlertCircle size={10} /> Läuft Ollama?
                    </span>
                  )}
               </div>
@@ -133,7 +131,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
                   {currentModels.length > 0 ? (
                     currentModels.map(m => <option key={m} value={m} className="bg-[#1a1d26]">{m}</option>)
                   ) : (
-                    <option value="" disabled>No models found</option>
+                    <option value="" disabled>Keine Modelle gefunden</option>
                   )}
                 </select>
                 <button 
@@ -148,8 +146,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
         </section>
 
         <section>
+          <label className="block text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">Globaler Hotkey</label>
+          <div className="relative">
+            <input
+              type="text"
+              value={localSettings.hotkey}
+              onChange={e => setLocalSettings({ ...localSettings, hotkey: e.target.value })}
+              placeholder="Alt+Shift+Space"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition-colors"
+            />
+            <Keyboard className="absolute left-3 top-3 text-gray-500" size={18} />
+          </div>
+        </section>
+
+        <section>
           <label className="block text-xs font-bold text-gray-500 mb-3 uppercase tracking-wider">
-            Target Languages <span className="opacity-60 font-normal normal-case">(Max 3)</span>
+            Zielsprachen <span className="opacity-60 font-normal normal-case">(Max 3)</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
             {LANGUAGES.map(lang => (
@@ -176,7 +188,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, on
           onClick={() => onSave(localSettings)}
           className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-900/30 active:scale-[0.98]"
         >
-          Save Configuration
+          Konfiguration speichern
         </button>
       </div>
     </div>
