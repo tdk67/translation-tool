@@ -35,7 +35,7 @@ cd translation-tool_v04
 npm install
 ```
 
-## 🏃‍♂️ How to Run
+## 🏃‍♂️ How to Run (Development)
 
 Since this is a hybrid Next.js + Electron app, use the build-and-run workflow:
 
@@ -50,11 +50,32 @@ npm run build
 npm run electron
 ```
 
+## 📦 How to Create an Installer (.exe)
+
+To share this app with others or install it permanently:
+
+1.  **Build the Distribution:**
+    ```bash
+    npm run dist
+    ```
+2.  **Locate the File:**
+    * Go to the `dist` folder in your project directory.
+    * You will find `PolyVoice Setup <version>.exe`. This is the installer.
+
+## 🗣️ Enabling Native Voices (TTS)
+
+If the text-to-speech sounds robotic or uses the wrong accent (e.g., English voice reading German text), you need to install the language pack in Windows:
+
+1.  Open Windows **Settings**.
+2.  Go to **Time & Language** > **Speech**.
+3.  Under **"Manage voices"**, click **Add voices**.
+4.  Search for the language you need (e.g., *German*, *Hungarian*, *Polish*).
+5.  Click **Add**.
+6.  **Restart PolyVoice** to detect the new voices.
+
 ## ⚠️ Troubleshooting
 
 * **System Audio is Silent:** When selecting a screen/tab to share, **you must check the "Share Audio" box** in the popup window.
 * **Ollama Not Found:** The app tries to connect to `127.0.0.1:11434`. Ensure no firewall is blocking this port.
 * **"No handler registered":** If you see this error, ensure you have run `npm run build` after any code changes. The Electron backend relies on the built static files.
 
-## 📜 License
-MIT

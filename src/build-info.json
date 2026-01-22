@@ -1,8 +1,8 @@
 {
   "appName": "PolyVoice",
-  "version": "0.1.2",
-  "buildId": "PUQJ6T",
-  "timestamp": "22.01.2026 20:35",
+  "version": "0.1.14",
+  "buildId": "PYJW6P",
+  "timestamp": "22.01.2026 22:22",
   "description": "PolyVoice ist ein datenschutzorientiertes Übersetzungstool für Profis. Es läuft vollständig lokal auf Ihrer Hardware und nutzt Whisper für Spracherkennung sowie lokale LLMs für Übersetzungen.",
   "features": [
     "Lokale Whisper STT (Datenschutz)",

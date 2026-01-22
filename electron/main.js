@@ -10,8 +10,7 @@ let modelLoading = false;
 let currentHotkey = 'Alt+Shift+Space';
 
 const BUILD_TIME = new Date().toISOString();
-
-// UPGRADE: 'whisper-small' is much better for songs/fast speech than 'base'
+// Using whisper-small for better quality (songs/lyrics)
 const WHISPER_MODEL = 'Xenova/whisper-small'; 
 
 function registerHotkey(hotkey) {
@@ -57,15 +56,28 @@ async function loadWhisperModel() {
 
 function showWindow() {
   if (!mainWindow) return;
+
+  // 1. Get cursor location
   const point = screen.getCursorScreenPoint();
+  
+  // 2. Find the display the cursor is on
   const display = screen.getDisplayNearestPoint(point);
-  const { x, y, width, height } = display.workArea;
+  
+  // 3. Get display work area (fallback to 0 if something is wrong)
+  const x = display.workArea.x || 0;
+  const y = display.workArea.y || 0;
+  const width = display.workArea.width || 1920;
+  const height = display.workArea.height || 1080;
+  
+  // 4. Get window size
   const [w, h] = mainWindow.getSize();
   
-  mainWindow.setPosition(
-    Math.round(x + (width / 2) - (w / 2)),
-    Math.round(y + (height / 2) - (h / 2))
-  );
+  // 5. Calculate center (Force Integer with Math.floor)
+  const newX = Math.floor(x + (width / 2) - (w / 2));
+  const newY = Math.floor(y + (height / 2) - (h / 2));
+  
+  // 6. Apply position (Only allows Integers)
+  mainWindow.setPosition(newX, newY);
   
   mainWindow.show();
   mainWindow.focus();
@@ -79,7 +91,6 @@ function createTray() {
 
   tray = new Tray(icon);
   
-  // GERMAN MENU
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Polyglot öffnen', click: () => showWindow() },
     { type: 'separator' },
@@ -98,7 +109,7 @@ function createTray() {
     }}
   ]);
 
-  tray.setToolTip('Polyglot Pop');
+  tray.setToolTip('PolyVoice');
   tray.setContextMenu(contextMenu);
   tray.on('double-click', () => showWindow());
 }
@@ -142,6 +153,7 @@ function createWindow() {
 
 ipcMain.handle('is-model-ready', () => !!transcriber);
 
+// System Audio Handler
 ipcMain.handle('get-screen-sources', async () => {
   const sources = await desktopCapturer.getSources({ 
     types: ['window', 'screen'],
@@ -170,6 +182,7 @@ ipcMain.handle('whisper-transcribe', async (event, audioData) => {
         let inputValues = Array.isArray(audioData) ? audioData : Object.values(audioData);
         const audio = new Float32Array(inputValues);
         
+        // Silence detection
         let maxAmp = 0;
         for(let i=0; i<audio.length; i++) if (Math.abs(audio[i]) > maxAmp) maxAmp = Math.abs(audio[i]);
         if (maxAmp < 0.01) return { success: true, text: "" };
@@ -186,15 +199,16 @@ ipcMain.handle('whisper-transcribe', async (event, audioData) => {
     }
 });
 
+// --- THIS IS THE MISSING HANDLER THAT CAUSED YOUR ERROR ---
 ipcMain.handle('translate-batch', async (event, { text, targetLangs }) => {
     const settings = getSettings();
     const langString = targetLangs.join(", ");
     
-    // STRICTER PROMPT to avoid "Here is your JSON" chatter
-    const systemPrompt = `You are a strict translation API. 
-    Task: Translate German text to: ${langString}.
-    Format: Return ONLY a valid JSON object. No Markdown. No Intro.
-    Example: {"English": "Hello", "French": "Salut"}`;
+    // Strict JSON prompt for Llama 3
+    const systemPrompt = `You are a translation engine. 
+    Task: Translate the German text to: ${langString}.
+    Format: Return ONLY valid JSON. Keys=LanguageName, Values=Translation.
+    No Markdown. No Intro.`;
 
     const userPrompt = `"${text}"`;
 
@@ -205,7 +219,7 @@ ipcMain.handle('translate-batch', async (event, { text, targetLangs }) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 model: settings.ollamaModel, 
-                prompt: `${systemPrompt}\n\nInput: ${userPrompt}`, 
+                prompt: `${systemPrompt}\n\n${userPrompt}`, 
                 stream: false,
                 format: "json",
                 options: { temperature: 0.1 }
@@ -213,7 +227,7 @@ ipcMain.handle('translate-batch', async (event, { text, targetLangs }) => {
         });
         const data = await response.json();
         
-        // Clean JSON before parsing just in case
+        // Safety cleanup for models that sometimes output markdown blocks
         let cleanJson = data.response.replace(/```json/g, '').replace(/```/g, '').trim();
         return { success: true, results: JSON.parse(cleanJson) };
     } catch (e) {
